@@ -58,7 +58,7 @@ export function ExpenseForm({ categories, onSubmit, initialData }: ExpenseFormPr
       amount: initialData.amount
     } : {
       vendor: "",
-      amount: undefined,
+      amount: '' as any, // Initialize with empty string
       date: new Date(),
       categoryId: "",
       description: "",
@@ -73,22 +73,25 @@ export function ExpenseForm({ categories, onSubmit, initialData }: ExpenseFormPr
         amount: initialData.amount
       });
     } else {
-       form.reset({ vendor: "", amount: undefined, date: new Date(), categoryId: "", description: "" });
+       form.reset({ vendor: "", amount: '' as any, date: new Date(), categoryId: "", description: "" }); // Reset with empty string
     }
+    setSuggestedCategory(null); // Clear suggestion when form is reset or initial data changes
   }, [initialData, form]);
 
   const handleFormSubmit = (data: ExpenseFormValues) => {
     onSubmit({ ...data, date: data.date.toISOString().split('T')[0] });
-    form.reset({ vendor: "", amount: undefined, date: new Date(), categoryId: "", description: "" });
+    form.reset({ vendor: "", amount: '' as any, date: new Date(), categoryId: "", description: "" }); // Reset with empty string
     setSuggestedCategory(null);
     toast({ title: "Success", description: `Expense ${initialData ? 'updated' : 'added'} successfully.` });
   };
 
   const handleSuggestCategory = async () => {
     const vendor = form.getValues("vendor");
-    const amount = form.getValues("amount");
+    const amountString = form.getValues("amount" as any); // RHF might hold it as string initially
+    const amount = parseFloat(amountString);
 
-    if (!vendor || !amount || amount <= 0) {
+
+    if (!vendor || !amountString || isNaN(amount) || amount <= 0) {
       toast({
         title: "Missing Information",
         description: "Please enter a vendor and a valid amount to suggest a category.",
@@ -163,7 +166,7 @@ export function ExpenseForm({ categories, onSubmit, initialData }: ExpenseFormPr
                   <FormItem>
                     <FormLabel>Amount ({selectedCurrency})</FormLabel>
                     <FormControl>
-                      <Input type="number" step="0.01" placeholder="e.g., 25.50" {...field} />
+                      <Input type="number" step="0.01" placeholder="e.g., 25.50" {...field} onChange={e => field.onChange(e.target.value === '' ? '' : parseFloat(e.target.value))} />
                     </FormControl>
                     <FormMessage />
                   </FormItem>

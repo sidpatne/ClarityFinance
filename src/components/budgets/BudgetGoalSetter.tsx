@@ -36,17 +36,16 @@ export function BudgetGoalSetter({ categories, existingBudgets, onSetBudget }: B
     resolver: zodResolver(budgetFormSchema),
     defaultValues: {
       categoryId: '',
-      amount: undefined,
+      amount: '' as any, // Initialize with empty string
       monthYear: currentMonthYear,
     },
   });
 
   const { control, handleSubmit, watch, setValue, reset } = form;
-  const watchedCategoryId = watch('categoryId'); // Renamed to avoid conflict
-  const watchedMonthYear = watch('monthYear'); // Renamed to avoid conflict
+  const watchedCategoryId = watch('categoryId'); 
+  const watchedMonthYear = watch('monthYear'); 
 
-  // Update amount field if budget for selected category and month already exists
-   useEffect(() => { // Changed from useState to useEffect
+   useEffect(() => { 
     if (watchedCategoryId && watchedMonthYear) {
       const existing = existingBudgets.find(
         (b) => b.categoryId === watchedCategoryId && b.monthYear === watchedMonthYear
@@ -54,18 +53,17 @@ export function BudgetGoalSetter({ categories, existingBudgets, onSetBudget }: B
       if (existing) {
         setValue('amount', existing.amount);
       } else {
-        setValue('amount', undefined); // Reset if no existing budget
+        setValue('amount', '' as any); // Reset with empty string
       }
     } else {
-        setValue('amount', undefined); // Reset if category or month is cleared
+        setValue('amount', '' as any); // Reset with empty string
     }
   }, [watchedCategoryId, watchedMonthYear, existingBudgets, setValue]);
 
 
   const onSubmitForm = (data: BudgetFormValues) => {
     onSetBudget(data);
-    // Reset only amount and categoryId, keep monthYear for convenience
-    reset({ categoryId: '', amount: undefined, monthYear: data.monthYear });
+    reset({ categoryId: '', amount: '' as any, monthYear: data.monthYear }); // Reset with empty string
   };
 
   return (
@@ -124,7 +122,7 @@ export function BudgetGoalSetter({ categories, existingBudgets, onSetBudget }: B
                     <FormControl>
                       <div className="relative">
                         <DollarSign className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-                        <Input type="number" step="0.01" placeholder="e.g., 500" className="pl-8" {...field} />
+                        <Input type="number" step="0.01" placeholder="e.g., 500" className="pl-8" {...field} onChange={e => field.onChange(e.target.value === '' ? '' : parseFloat(e.target.value))} />
                       </div>
                     </FormControl>
                     <FormMessage />
