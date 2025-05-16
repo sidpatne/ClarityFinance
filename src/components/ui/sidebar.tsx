@@ -26,8 +26,6 @@ const SIDEBAR_WIDTH = "16rem"
 const SIDEBAR_WIDTH_MOBILE = "18rem"
 const SIDEBAR_WIDTH_ICON = "3rem"
 const SIDEBAR_KEYBOARD_SHORTCUT = "b"
-const APP_HEADER_HEIGHT_CLASS = "top-16"; // Corresponds to h-16 (4rem)
-const APP_HEADER_CALC_HEIGHT_CLASS = "!h-[calc(100svh_-_4rem)]"; // For overriding default height
 
 type SidebarContext = {
   state: "expanded" | "collapsed"
@@ -73,8 +71,6 @@ const SidebarProvider = React.forwardRef<
     const isMobile = useIsMobile()
     const [openMobile, setOpenMobile] = React.useState(false)
 
-    // This is the internal state of the sidebar.
-    // We use openProp and setOpenProp for control from outside the component.
     const [_open, _setOpen] = React.useState(defaultOpen)
     const open = openProp ?? _open
     const setOpen = React.useCallback(
@@ -86,7 +82,6 @@ const SidebarProvider = React.forwardRef<
           _setOpen(openState)
         }
 
-        // This sets the cookie to keep the sidebar state.
         if (typeof document !== 'undefined') {
           document.cookie = `${SIDEBAR_COOKIE_NAME}=${openState}; path=/; max-age=${SIDEBAR_COOKIE_MAX_AGE}`
         }
@@ -94,14 +89,12 @@ const SidebarProvider = React.forwardRef<
       [setOpenProp, open]
     )
 
-    // Helper to toggle the sidebar.
     const toggleSidebar = React.useCallback(() => {
       return isMobile
         ? setOpenMobile((open) => !open)
         : setOpen((open) => !open)
     }, [isMobile, setOpen, setOpenMobile])
 
-    // Adds a keyboard shortcut to toggle the sidebar.
     React.useEffect(() => {
       const handleKeyDown = (event: KeyboardEvent) => {
         if (
@@ -117,8 +110,6 @@ const SidebarProvider = React.forwardRef<
       return () => window.removeEventListener("keydown", handleKeyDown)
     }, [toggleSidebar])
 
-    // We add a state so that we can do data-state="expanded" or "collapsed".
-    // This makes it easier to style the sidebar with Tailwind classes.
     const state = open ? "expanded" : "collapsed"
 
     const contextValue = React.useMemo<SidebarContext>(
@@ -195,7 +186,7 @@ const Sidebar = React.forwardRef<
 
     const handleMouseLeave = () => {
       if (!isMobile && collapsible === "icon" && actualClientState === "expanded") {
-        setOpen(false); 
+        setOpen(false);
       }
     };
     
@@ -203,9 +194,7 @@ const Sidebar = React.forwardRef<
       return (
         <div
           className={cn(
-            "flex flex-col bg-sidebar text-sidebar-foreground",
-            APP_HEADER_HEIGHT_CLASS, // Starts below header
-            APP_HEADER_CALC_HEIGHT_CLASS, // Fills remaining height
+            "flex h-svh flex-col bg-sidebar text-sidebar-foreground",
             "w-[--sidebar-width]",
             className
           )}
@@ -217,7 +206,6 @@ const Sidebar = React.forwardRef<
       )
     }
 
-    // Client-side rendering for mobile
     if (mounted && isMobile) {
       return (
         <Sheet open={openMobile} onOpenChange={setOpenMobile} {...props}>
@@ -225,9 +213,7 @@ const Sidebar = React.forwardRef<
             data-sidebar="sidebar"
             data-mobile="true"
             className={cn(
-              "w-[--sidebar-width] bg-sidebar p-0 text-sidebar-foreground [&>button]:hidden",
-              APP_HEADER_HEIGHT_CLASS, 
-              APP_HEADER_CALC_HEIGHT_CLASS
+              "w-[--sidebar-width] bg-sidebar p-0 text-sidebar-foreground [&>button]:hidden"
             )}
             style={
               {
@@ -262,9 +248,8 @@ const Sidebar = React.forwardRef<
       >
         <div
           className={cn(
-            "duration-200 relative bg-transparent transition-[width] ease-linear",
-            APP_HEADER_CALC_HEIGHT_CLASS, // Adjusted height
-            "w-[--sidebar-width]", // Default width
+            "duration-200 relative h-svh bg-transparent transition-[width] ease-linear",
+            "w-[--sidebar-width]", 
             "group-data-[collapsible=offcanvas]:w-0",
             "group-data-[side=right]:rotate-180",
             variant === "floating" || variant === "inset"
@@ -274,9 +259,7 @@ const Sidebar = React.forwardRef<
         />
         <div
           className={cn(
-            "duration-200 fixed bottom-0 z-10 hidden transition-[left,right,width] ease-linear md:flex",
-            APP_HEADER_HEIGHT_CLASS, // Positioned below header
-            APP_HEADER_CALC_HEIGHT_CLASS, // Takes remaining height
+            "duration-200 fixed inset-y-0 z-10 hidden h-svh transition-[left,right,width] ease-linear md:flex",
             "w-[--sidebar-width]",
             side === "left"
               ? "left-0 group-data-[collapsible=offcanvas]:left-[calc(var(--sidebar-width)*-1)]"
@@ -313,7 +296,7 @@ const SidebarTrigger = React.forwardRef<
       data-sidebar="trigger"
       variant="ghost"
       size="icon"
-      className={cn("h-7 w-7", className)}
+      className={cn("h-7 w-7 md:hidden", className)} // md:hidden was here
       onClick={(event) => {
         onClick?.(event)
         toggleSidebar()
@@ -357,18 +340,16 @@ const SidebarRail = React.forwardRef<
 SidebarRail.displayName = "SidebarRail"
 
 const SidebarInset = React.forwardRef<
-  HTMLDivElement, // Changed from HTMLMainElement as it's a div wrapper for main
-  React.HTMLAttributes<HTMLDivElement> // Changed from React.ComponentProps<"main">
+  HTMLMainElement, 
+  React.ComponentProps<"main">
 >(({ className, ...props }, ref) => {
-  // Classes that depend on the peer state
-  const conditionalClasses = "peer-data-[variant=inset]:min-h-[calc(100svh-theme(spacing.4)-theme(spacing.16))] md:peer-data-[variant=inset]:m-2 md:peer-data-[state=collapsed]:peer-data-[variant=inset]:ml-2 md:peer-data-[variant=inset]:ml-0 md:peer-data-[variant=inset]:rounded-xl md:peer-data-[variant=inset]:shadow";
-  // Note: min-h adjusted for pt-16 on parent (appHeaderHeight)
+  const conditionalClasses = "peer-data-[variant=inset]:min-h-svh md:peer-data-[variant=inset]:m-2 md:peer-data-[state=collapsed]:peer-data-[variant=inset]:ml-2 md:peer-data-[variant=inset]:ml-0 md:peer-data-[variant=inset]:rounded-xl md:peer-data-[variant=inset]:shadow";
   
   return (
-    <div // Changed from main to div, as main is now a child
+    <main
       ref={ref}
       className={cn(
-        "relative flex flex-1 flex-col bg-background", // base classes
+        "relative flex min-h-svh flex-1 flex-col bg-background", 
         conditionalClasses, 
         className
       )}
@@ -507,7 +488,6 @@ const SidebarGroupAction = React.forwardRef<
       data-sidebar="group-action"
       className={cn(
         "absolute right-3 top-3.5 flex aspect-square w-5 items-center justify-center rounded-md p-0 text-sidebar-foreground outline-none ring-sidebar-ring transition-transform hover:bg-sidebar-accent hover:text-sidebar-accent-foreground focus-visible:ring-2 [&>svg]:size-4 [&>svg]:shrink-0",
-        // Increases the hit area of the button on mobile.
         "after:absolute after:-inset-2 after:md:hidden",
         "group-data-[collapsible=icon]:hidden",
         className
@@ -653,7 +633,6 @@ const SidebarMenuAction = React.forwardRef<
       data-sidebar="menu-action"
       className={cn(
         "absolute right-1 top-1.5 flex aspect-square w-5 items-center justify-center rounded-md p-0 text-sidebar-foreground outline-none ring-sidebar-ring transition-transform hover:bg-sidebar-accent hover:text-sidebar-accent-foreground focus-visible:ring-2 peer-hover/menu-button:text-sidebar-accent-foreground [&>svg]:size-4 [&>svg]:shrink-0",
-        // Increases the hit area of the button on mobile.
         "after:absolute after:-inset-2 after:md:hidden",
         "peer-data-[size=sm]/menu-button:top-1",
         "peer-data-[size=default]/menu-button:top-1.5",
@@ -696,7 +675,6 @@ const SidebarMenuSkeleton = React.forwardRef<
     showIcon?: boolean
   }
 >(({ className, showIcon = false, ...props }, ref) => {
-  // Random width between 50 to 90%.
   const width = React.useMemo(() => {
     return `${Math.floor(Math.random() * 40) + 50}%`
   }, [])
