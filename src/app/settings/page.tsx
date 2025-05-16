@@ -32,6 +32,7 @@ const currencies = [
   { value: "EUR", label: "EUR - Euro" },
   { value: "GBP", label: "GBP - British Pound" },
   { value: "JPY", label: "JPY - Japanese Yen" },
+  { value: "INR", label: "INR - Indian Rupee" },
 ];
 
 export default function SettingsPage() {
