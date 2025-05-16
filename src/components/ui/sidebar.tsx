@@ -1,3 +1,4 @@
+
 "use client"
 
 import * as React from "react"
@@ -84,7 +85,9 @@ const SidebarProvider = React.forwardRef<
         }
 
         // This sets the cookie to keep the sidebar state.
-        document.cookie = `${SIDEBAR_COOKIE_NAME}=${openState}; path=/; max-age=${SIDEBAR_COOKIE_MAX_AGE}`
+        if (typeof document !== 'undefined') {
+          document.cookie = `${SIDEBAR_COOKIE_NAME}=${openState}; path=/; max-age=${SIDEBAR_COOKIE_MAX_AGE}`
+        }
       },
       [setOpenProp, open]
     )
@@ -175,7 +178,12 @@ const Sidebar = React.forwardRef<
     },
     ref
   ) => {
-    const { isMobile, state, openMobile, setOpenMobile } = useSidebar()
+    const { isMobile, state: actualClientState, openMobile, setOpenMobile } = useSidebar()
+    const [mounted, setMounted] = React.useState(false)
+
+    React.useEffect(() => {
+      setMounted(true)
+    }, [])
 
     if (collapsible === "none") {
       return (
@@ -192,7 +200,7 @@ const Sidebar = React.forwardRef<
       )
     }
 
-    if (isMobile) {
+    if (mounted && isMobile) {
       return (
         <Sheet open={openMobile} onOpenChange={setOpenMobile} {...props}>
           <SheetContent
@@ -211,13 +219,29 @@ const Sidebar = React.forwardRef<
         </Sheet>
       )
     }
+    
+    // For SSR and initial client render (before mount), or if not mobile after mount:
+    // Determine displayed state based on mount status to match server's alleged render
+    const displayState = mounted ? actualClientState : "expanded";
+    // Based on error log, server renders collapsible="" when state is expanded
+    const displayDataCollapsible = mounted 
+      ? (actualClientState === "collapsed" ? collapsible : "") 
+      : ("expanded" === "collapsed" ? collapsible : "");
 
+
+    // This div is rendered for desktop, or before client is mounted and determined to be mobile
     return (
       <div
         ref={ref}
-        className="group peer hidden md:block text-sidebar-foreground"
-        data-state={state}
-        data-collapsible={state === "collapsed" ? collapsible : ""}
+        className={cn(
+          "group peer text-sidebar-foreground",
+           // Hide initially if isMobile might be true, then show via CSS if !isMobile after mount or rely on `mounted && isMobile` check above.
+           // The original `hidden md:block` handles visibility based on screen size after hydration.
+           // For hydration, we ensure this div is part of the structure if !isMobile pre-mount.
+           isMobile && !mounted ? "hidden" : "hidden md:block" 
+        )}
+        data-state={displayState}
+        data-collapsible={displayDataCollapsible}
         data-variant={variant}
         data-side={side}
       >
@@ -242,9 +266,9 @@ const Sidebar = React.forwardRef<
             variant === "floating" || variant === "inset"
               ? "p-2 group-data-[collapsible=icon]:w-[calc(var(--sidebar-width-icon)_+_theme(spacing.4)_+2px)]"
               : "group-data-[collapsible=icon]:w-[--sidebar-width-icon] group-data-[side=left]:border-r group-data-[side=right]:border-l",
-            className
+            className // This className is from props to <Sidebar>
           )}
-          {...props}
+          {...props} // Spread remaining props here
         >
           <div
             data-sidebar="sidebar"
