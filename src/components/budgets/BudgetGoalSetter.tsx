@@ -1,6 +1,7 @@
+
 "use client";
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react'; // Added useEffect
 import { useForm, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
@@ -11,6 +12,7 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '
 import type { Category, Budget } from '@/types';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { DollarSign, PlusCircle } from 'lucide-react';
+import { useCurrency } from '@/contexts/CurrencyContext';
 
 const budgetFormSchema = z.object({
   categoryId: z.string().min(1, "Category is required"),
@@ -28,6 +30,7 @@ interface BudgetGoalSetterProps {
 
 export function BudgetGoalSetter({ categories, existingBudgets, onSetBudget }: BudgetGoalSetterProps) {
   const currentMonthYear = new Date().toISOString().slice(0, 7); // YYYY-MM
+  const { selectedCurrency } = useCurrency();
 
   const form = useForm<BudgetFormValues>({
     resolver: zodResolver(budgetFormSchema),
@@ -39,28 +42,30 @@ export function BudgetGoalSetter({ categories, existingBudgets, onSetBudget }: B
   });
 
   const { control, handleSubmit, watch, setValue, reset } = form;
-  const selectedCategoryId = watch('categoryId');
-  const selectedMonthYear = watch('monthYear');
+  const watchedCategoryId = watch('categoryId'); // Renamed to avoid conflict
+  const watchedMonthYear = watch('monthYear'); // Renamed to avoid conflict
 
   // Update amount field if budget for selected category and month already exists
-  useState(() => {
-    if (selectedCategoryId && selectedMonthYear) {
+   useEffect(() => { // Changed from useState to useEffect
+    if (watchedCategoryId && watchedMonthYear) {
       const existing = existingBudgets.find(
-        (b) => b.categoryId === selectedCategoryId && b.monthYear === selectedMonthYear
+        (b) => b.categoryId === watchedCategoryId && b.monthYear === watchedMonthYear
       );
       if (existing) {
         setValue('amount', existing.amount);
       } else {
-        setValue('amount', undefined);
+        setValue('amount', undefined); // Reset if no existing budget
       }
+    } else {
+        setValue('amount', undefined); // Reset if category or month is cleared
     }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }); // This effect should run when selectedCategoryId or selectedMonthYear changes.
+  }, [watchedCategoryId, watchedMonthYear, existingBudgets, setValue]);
+
 
   const onSubmitForm = (data: BudgetFormValues) => {
     onSetBudget(data);
-    // Optionally reset parts of the form or provide feedback
-    // reset({ categoryId: '', amount: undefined, monthYear: currentMonthYear }); 
+    // Reset only amount and categoryId, keep monthYear for convenience
+    reset({ categoryId: '', amount: undefined, monthYear: data.monthYear });
   };
 
   return (
@@ -115,7 +120,7 @@ export function BudgetGoalSetter({ categories, existingBudgets, onSetBudget }: B
                 name="amount"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Budget Amount ($)</FormLabel>
+                    <FormLabel>Budget Amount ({selectedCurrency})</FormLabel>
                     <FormControl>
                       <div className="relative">
                         <DollarSign className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />

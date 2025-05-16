@@ -1,3 +1,4 @@
+
 "use client";
 
 import type { Budget, Category, Transaction } from '@/types';
@@ -5,6 +6,7 @@ import { Progress } from "@/components/ui/progress";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { CategoryIcon } from '@/components/icons';
 import { DollarSign } from 'lucide-react';
+import { useCurrency } from '@/contexts/CurrencyContext';
 
 interface BudgetProgressListProps {
   budgets: Budget[];
@@ -14,6 +16,7 @@ interface BudgetProgressListProps {
 }
 
 export function BudgetProgressList({ budgets, categories, transactions, selectedMonthYear }: BudgetProgressListProps) {
+  const { formatCurrency } = useCurrency();
   
   const getCategorySpentAmount = (categoryId: string, monthYear: string): number => {
     return transactions
@@ -63,16 +66,16 @@ export function BudgetProgressList({ budgets, categories, transactions, selected
                   <span className="font-semibold text-lg">{category.name}</span>
                 </div>
                 <div className="text-sm text-muted-foreground">
-                  Budget: ${budget.amount.toFixed(2)}
+                  Budget: {formatCurrency(budget.amount)}
                 </div>
               </div>
               <Progress value={Math.min(progressPercentage, 100)} className="w-full h-3 mb-1" indicatorClassName={progressBarColor} />
               <div className="flex justify-between text-xs text-muted-foreground">
-                <span>Spent: ${spentAmount.toFixed(2)}</span>
+                <span>Spent: {formatCurrency(spentAmount)}</span>
                 <span className={remainingAmount < 0 ? 'text-destructive font-medium' : ''}>
                   {remainingAmount >= 0 
-                    ? `Remaining: $${remainingAmount.toFixed(2)}`
-                    : `Overspent: $${Math.abs(remainingAmount).toFixed(2)}`}
+                    ? `Remaining: ${formatCurrency(remainingAmount)}`
+                    : `Overspent: ${formatCurrency(Math.abs(remainingAmount))}`}
                 </span>
               </div>
                {progressPercentage > 100 && (

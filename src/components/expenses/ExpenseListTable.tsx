@@ -1,3 +1,4 @@
+
 "use client";
 
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
@@ -7,6 +8,7 @@ import { MoreHorizontal, Edit, Trash2 } from "lucide-react";
 import type { Transaction, Category } from "@/types";
 import { CategoryIcon } from "@/components/icons";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { useCurrency } from "@/contexts/CurrencyContext";
 
 interface ExpenseListTableProps {
   transactions: Transaction[];
@@ -16,6 +18,8 @@ interface ExpenseListTableProps {
 }
 
 export function ExpenseListTable({ transactions, categories, onEdit, onDelete }: ExpenseListTableProps) {
+  const { formatCurrency } = useCurrency();
+
   const getCategory = (categoryId: string) => {
     return categories.find(cat => cat.id === categoryId);
   };
@@ -59,7 +63,7 @@ export function ExpenseListTable({ transactions, categories, onEdit, onDelete }:
                       "Uncategorized"
                     )}
                   </TableCell>
-                  <TableCell className="text-right">${txn.amount.toFixed(2)}</TableCell>
+                  <TableCell className="text-right">{formatCurrency(txn.amount)}</TableCell>
                   <TableCell className="text-right">
                     <DropdownMenu>
                       <DropdownMenuTrigger asChild>

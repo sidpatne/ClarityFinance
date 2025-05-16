@@ -1,3 +1,4 @@
+
 "use client";
 
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
@@ -7,6 +8,7 @@ import { Button } from "@/components/ui/button";
 import Link from "next/link";
 import { ArrowUpRight } from "lucide-react";
 import { CategoryIcon } from "@/components/icons";
+import { useCurrency } from "@/contexts/CurrencyContext";
 
 interface RecentTransactionsTableProps {
   transactions: Transaction[];
@@ -15,6 +17,8 @@ interface RecentTransactionsTableProps {
 }
 
 export function RecentTransactionsTable({ transactions, categories, limit = 5 }: RecentTransactionsTableProps) {
+  const { formatCurrency } = useCurrency();
+  
   const getCategoryName = (categoryId: string) => {
     return categories.find(cat => cat.id === categoryId)?.name || "Uncategorized";
   };
@@ -71,7 +75,7 @@ export function RecentTransactionsTable({ transactions, categories, limit = 5 }:
                   {new Date(txn.date).toLocaleDateString()}
                 </TableCell>
                 <TableCell className="text-right">
-                  ${txn.amount.toFixed(2)}
+                  {formatCurrency(txn.amount)}
                 </TableCell>
               </TableRow>
             )) : (

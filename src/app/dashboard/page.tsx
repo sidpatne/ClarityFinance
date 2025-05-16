@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useState, useEffect, useMemo } from 'react';
@@ -8,11 +9,13 @@ import { RecentTransactionsTable } from "@/components/dashboard/RecentTransactio
 import { SpendingPieChart } from "@/components/dashboard/SpendingPieChart";
 import type { Transaction, Category, Budget } from "@/types";
 import { initialTransactions, initialCategories, initialBudgets } from "@/lib/data";
+import { useCurrency } from '@/contexts/CurrencyContext';
 
 export default function DashboardPage() {
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
   const [budgets, setBudgets] = useState<Budget[]>([]);
+  const { formatCurrency } = useCurrency();
 
   // Simulate data fetching
   useEffect(() => {
@@ -54,19 +57,19 @@ export default function DashboardPage() {
       <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4 mb-6">
         <SummaryCard 
           title="Total Spent (This Month)" 
-          value={`$${totalSpentThisMonth.toFixed(2)}`}
+          value={formatCurrency(totalSpentThisMonth)}
           icon={DollarSign}
           description="Sum of all transactions this month."
         />
         <SummaryCard 
           title="Budget Remaining" 
-          value={`$${budgetRemaining.toFixed(2)}`}
+          value={formatCurrency(budgetRemaining)}
           icon={Receipt}
-          description={totalBudgetThisMonth > 0 ? `Total budget: $${totalBudgetThisMonth.toFixed(2)}` : "No budget set."}
+          description={totalBudgetThisMonth > 0 ? `Total budget: ${formatCurrency(totalBudgetThisMonth)}` : "No budget set."}
         />
         <SummaryCard
           title="Avg. Daily Spending"
-          value={`$${averageDailySpending.toFixed(2)}`}
+          value={formatCurrency(averageDailySpending)}
           icon={TrendingUp}
           description="Average spending per day this month."
         />

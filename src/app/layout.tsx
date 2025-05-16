@@ -1,9 +1,11 @@
+
 import type { Metadata } from 'next';
 import { Inter as FontSans } from 'next/font/google'; // Using Inter as a clean sans-serif font
 import './globals.css';
 import { Toaster } from '@/components/ui/toaster';
 import { AppLayoutClient } from '@/components/layout/AppLayoutClient';
 import { cn } from '@/lib/utils';
+import { CurrencyProvider } from '@/contexts/CurrencyContext';
 
 const fontSans = FontSans({
   subsets: ['latin'],
@@ -28,7 +30,9 @@ export default function RootLayout({
           fontSans.variable
         )}
       >
-        <AppLayoutClient>{children}</AppLayoutClient>
+        <CurrencyProvider>
+          <AppLayoutClient>{children}</AppLayoutClient>
+        </CurrencyProvider>
         <Toaster />
       </body>
     </html>

@@ -1,3 +1,4 @@
+
 "use client";
 
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -25,6 +26,7 @@ import { autoCategorizeExpense, type AutoCategorizeExpenseInput } from "@/ai/flo
 import { useToast } from "@/hooks/use-toast";
 import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
+import { useCurrency } from "@/contexts/CurrencyContext";
 
 const expenseFormSchema = z.object({
   vendor: z.string().min(1, { message: "Vendor is required." }),
@@ -44,6 +46,7 @@ interface ExpenseFormProps {
 
 export function ExpenseForm({ categories, onSubmit, initialData }: ExpenseFormProps) {
   const { toast } = useToast();
+  const { selectedCurrency } = useCurrency();
   const [isSuggesting, setIsSuggesting] = useState(false);
   const [suggestedCategory, setSuggestedCategory] = useState<{ category: string, confidence: number } | null>(null);
   
@@ -69,6 +72,8 @@ export function ExpenseForm({ categories, onSubmit, initialData }: ExpenseFormPr
         date: new Date(initialData.date),
         amount: initialData.amount
       });
+    } else {
+       form.reset({ vendor: "", amount: undefined, date: new Date(), categoryId: "", description: "" });
     }
   }, [initialData, form]);
 
@@ -98,7 +103,6 @@ export function ExpenseForm({ categories, onSubmit, initialData }: ExpenseFormPr
       const input: AutoCategorizeExpenseInput = { vendor, amount, description: form.getValues("description") };
       const result = await autoCategorizeExpense(input);
       
-      // Try to match suggested category with existing categories
       const matchedCategory = categories.find(c => c.name.toLowerCase() === result.category.toLowerCase());
       
       if (matchedCategory) {
@@ -157,7 +161,7 @@ export function ExpenseForm({ categories, onSubmit, initialData }: ExpenseFormPr
                 name="amount"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Amount ($)</FormLabel>
+                    <FormLabel>Amount ({selectedCurrency})</FormLabel>
                     <FormControl>
                       <Input type="number" step="0.01" placeholder="e.g., 25.50" {...field} />
                     </FormControl>

@@ -15,11 +15,12 @@ import {
 } from "@/components/ui/select";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { useToast } from "@/hooks/use-toast";
+import { useCurrency } from '@/contexts/CurrencyContext';
 
 type ThemeValue = "light" | "dark" | "system";
 const THEME_STORAGE_KEY = "app-theme";
 const LANGUAGE_STORAGE_KEY = "app-language";
-const CURRENCY_STORAGE_KEY = "app-currency";
+// CURRENCY_STORAGE_KEY is now managed by CurrencyContext
 
 const languages = [
   { value: "en", label: "English" },
@@ -41,9 +42,9 @@ export default function SettingsPage() {
 
   const [selectedTheme, setSelectedTheme] = useState<ThemeValue>("system");
   const [selectedLanguage, setSelectedLanguage] = useState<string>(languages[0].value);
-  const [selectedCurrency, setSelectedCurrency] = useState<string>(currencies[0].value);
+  const { selectedCurrency, setSelectedCurrency: setGlobalCurrency } = useCurrency();
 
-  // Load settings from localStorage on mount
+  // Load settings from localStorage on mount (Theme and Language only)
   useEffect(() => {
     const storedTheme = localStorage.getItem(THEME_STORAGE_KEY) as ThemeValue | null;
     if (storedTheme) {
@@ -54,17 +55,13 @@ export default function SettingsPage() {
     if (storedLanguage) {
       setSelectedLanguage(storedLanguage);
     }
-
-    const storedCurrency = localStorage.getItem(CURRENCY_STORAGE_KEY);
-    if (storedCurrency) {
-      setSelectedCurrency(storedCurrency);
-    }
+    // Currency is loaded by CurrencyProvider
     setMounted(true);
   }, []);
 
   // Apply and save theme
   useEffect(() => {
-    if (!mounted) return; // Ensure this runs only after initial state is set from localStorage
+    if (!mounted) return; 
 
     const root = window.document.documentElement;
     root.classList.remove("light", "dark");
@@ -75,7 +72,7 @@ export default function SettingsPage() {
     }
     
     root.classList.add(effectiveTheme);
-    localStorage.setItem(THEME_STORAGE_KEY, selectedTheme); // Store the user's *choice* (light, dark, or system)
+    localStorage.setItem(THEME_STORAGE_KEY, selectedTheme); 
   }, [selectedTheme, mounted]);
 
   // System theme change listener
@@ -97,17 +94,12 @@ export default function SettingsPage() {
   useEffect(() => {
     if (!mounted) return;
     localStorage.setItem(LANGUAGE_STORAGE_KEY, selectedLanguage);
+    // Potentially show a toast or trigger re-render if language change needs immediate UI update elsewhere
   }, [selectedLanguage, mounted]);
 
-  // Save currency
-  useEffect(() => {
-    if (!mounted) return;
-    localStorage.setItem(CURRENCY_STORAGE_KEY, selectedCurrency);
-  }, [selectedCurrency, mounted]);
-
+  // Currency is saved by CurrencyProvider's useEffect
 
   if (!mounted) {
-    // Optional: Render a loading state or null to prevent UI flicker/mismatch during hydration
     return null; 
   }
 
@@ -127,7 +119,10 @@ export default function SettingsPage() {
           <CardContent>
             <RadioGroup
               value={selectedTheme}
-              onValueChange={(value: string) => setSelectedTheme(value as ThemeValue)}
+              onValueChange={(value: string) => {
+                setSelectedTheme(value as ThemeValue);
+                toast({ title: "Theme Updated" });
+              }}
             >
               <div className="flex items-center space-x-2">
                 <RadioGroupItem value="light" id="theme-light" />
@@ -151,7 +146,13 @@ export default function SettingsPage() {
             <CardDescription>Select your display language.</CardDescription>
           </CardHeader>
           <CardContent>
-            <Select value={selectedLanguage} onValueChange={setSelectedLanguage}>
+            <Select 
+              value={selectedLanguage} 
+              onValueChange={(value) => {
+                setSelectedLanguage(value);
+                toast({ title: "Language Updated" });
+              }}
+            >
               <SelectTrigger>
                 <SelectValue placeholder="Select language" />
               </SelectTrigger>
@@ -172,7 +173,13 @@ export default function SettingsPage() {
             <CardDescription>Set your default currency for display.</CardDescription>
           </CardHeader>
           <CardContent>
-            <Select value={selectedCurrency} onValueChange={setSelectedCurrency}>
+            <Select 
+              value={selectedCurrency} 
+              onValueChange={(value) => {
+                setGlobalCurrency(value);
+                toast({ title: "Currency Updated" });
+              }}
+            >
               <SelectTrigger>
                 <SelectValue placeholder="Select currency" />
               </SelectTrigger>

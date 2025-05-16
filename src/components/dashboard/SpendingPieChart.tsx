@@ -1,3 +1,4 @@
+
 "use client"
 
 import * as React from "react"
@@ -15,8 +16,9 @@ import {
   ChartContainer,
   ChartTooltipContent,
 } from "@/components/ui/chart"
-import type { Transaction, Category, ChartDataItem } from "@/types";
+import type { Transaction, Category } from "@/types"; // Removed ChartDataItem as it's not used directly
 import { CHART_COLORS } from "@/lib/data";
+import { useCurrency } from "@/contexts/CurrencyContext";
 
 
 interface SpendingPieChartProps {
@@ -26,6 +28,7 @@ interface SpendingPieChartProps {
 
 export function SpendingPieChart({ transactions, categories }: SpendingPieChartProps) {
   const [activeIndex, setActiveIndex] = React.useState<number | undefined>(undefined);
+  const { formatCurrency } = useCurrency();
 
   const dataByCategory = React.useMemo(() => {
     const spending: Record<string, number> = {};
@@ -37,14 +40,14 @@ export function SpendingPieChart({ transactions, categories }: SpendingPieChartP
       name: categories.find(c => c.id === categoryId)?.name || "Uncategorized",
       value: amount,
       fill: CHART_COLORS[index % CHART_COLORS.length],
-      id: categoryId,
+      id: categoryId, // Keep id if needed for other interactions
     })).sort((a,b) => b.value - a.value);
   }, [transactions, categories]);
 
   const chartConfig = React.useMemo(() => {
     const config: ChartConfig = {};
     dataByCategory.forEach(item => {
-      config[item.name] = {
+      config[item.name] = { // Use item.name which is category name
         label: item.name,
         color: item.fill,
       };
@@ -80,7 +83,21 @@ export function SpendingPieChart({ transactions, categories }: SpendingPieChartP
           <RechartsPieChart>
             <Tooltip
               cursor={false}
-              content={<ChartTooltipContent hideLabel />}
+              content={<ChartTooltipContent 
+                hideLabel 
+                formatter={(value, name, props) => {
+                    if (typeof value === 'number') {
+                       const categoryName = props.payload?.name || name;
+                       return (
+                        <div className="flex flex-col gap-0.5">
+                           <span className="font-medium">{categoryName}</span>
+                           <span className="text-muted-foreground">{formatCurrency(value)}</span>
+                        </div>
+                       )
+                    }
+                    return null;
+                }}
+              />}
             />
             <Pie
               data={dataByCategory}
@@ -91,15 +108,15 @@ export function SpendingPieChart({ transactions, categories }: SpendingPieChartP
               activeIndex={activeIndex}
               activeShape={({ cx, cy, innerRadius, outerRadius, startAngle, endAngle, fill, payload, percent }) => (
                 <g>
-                  <text x={cx} y={cy} dy={8} textAnchor="middle" fill={fill} className="text-sm font-semibold">
+                  <text x={cx} y={cy} dy={0} textAnchor="middle" fill={fill} className="text-sm font-semibold">
                     {payload.name}
                   </text>
-                  <text x={cx} y={cy! + 20} textAnchor="middle" fill="hsl(var(--muted-foreground))" className="text-xs">
+                   <text x={cx} y={cy! + 18} textAnchor="middle" fill="hsl(var(--muted-foreground))" className="text-xs">
                     {`(${(percent! * 100).toFixed(0)}%)`}
                   </text>
-                  <Pie
-                    data={[payload]}
-                    dataKey="value"
+                  <Pie // This inner Pie is for the active shape outline effect
+                    dataKey="value" // Needs a dataKey
+                    data={[payload]} // Data for this segment only
                     cx={cx}
                     cy={cy}
                     innerRadius={innerRadius}
@@ -107,7 +124,7 @@ export function SpendingPieChart({ transactions, categories }: SpendingPieChartP
                     startAngle={startAngle}
                     endAngle={endAngle}
                     fill={fill}
-                    stroke={fill}
+                    stroke={fill} // Use fill color for stroke for consistency
                   />
                 </g>
               )}
@@ -122,12 +139,17 @@ export function SpendingPieChart({ transactions, categories }: SpendingPieChartP
                 if (!payload) return null;
                 return (
                   <div className="flex flex-wrap justify-center gap-x-4 gap-y-1 text-xs mt-4">
-                    {payload.map((entry, index) => (
-                      <div key={`item-${index}`} className="flex items-center gap-1.5">
-                        <span className="h-2.5 w-2.5 rounded-full" style={{ backgroundColor: entry.color }} />
-                        {entry.value} (${dataByCategory.find(d => d.name === entry.value)?.value.toFixed(2)})
-                      </div>
-                    ))}
+                    {payload.map((entry, index) => {
+                      // Find the original data item to get the numeric value for formatting
+                      const originalItem = dataByCategory.find(d => d.name === entry.value);
+                      const valueToFormat = originalItem ? originalItem.value : 0;
+                      return (
+                        <div key={`item-${index}`} className="flex items-center gap-1.5">
+                          <span className="h-2.5 w-2.5 rounded-full" style={{ backgroundColor: entry.color }} />
+                          {entry.value} ({formatCurrency(valueToFormat)})
+                        </div>
+                      );
+                    })}
                   </div>
                 )
               }} />
