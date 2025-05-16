@@ -194,6 +194,8 @@ const Sidebar = React.forwardRef<
     const handleMouseLeave = () => {
       if (!isMobile && collapsible === "icon" && actualClientState === "expanded") {
         // Check if it was opened by click or hover - for now, assume hover out collapses if it's icon mode
+        // To prevent closing if it was explicitly opened by click, we might need another state,
+        // but for simple hover-to-expand, this is fine.
         setOpen(false);
       }
     };
@@ -233,10 +235,14 @@ const Sidebar = React.forwardRef<
       )
     }
     
-    const displayState = mounted ? actualClientState : "expanded";
-    const displayDataCollapsible = mounted 
-      ? (actualClientState === "collapsed" ? collapsible : "") 
-      : ("expanded" === "collapsed" ? collapsible : "");
+    // Determine state for SSR and initial client render before mount
+    // Server: mounted=false, actualClientState is based on defaultOpen
+    // Client (initial): mounted=false, actualClientState is based on defaultOpen
+    // Client (after mount): mounted=true, actualClientState reflects current open state
+    const displayState = mounted ? actualClientState : (open ? "expanded" : "collapsed");
+    const displayDataCollapsible = mounted
+      ? (actualClientState === "collapsed" ? collapsible : "")
+      : ((open ? "expanded" : "collapsed") === "collapsed" ? collapsible : "");
 
 
     return (
@@ -244,7 +250,9 @@ const Sidebar = React.forwardRef<
         ref={ref}
         className={cn(
           "group peer text-sidebar-foreground",
-           isMobile && !mounted ? "hidden" : "hidden md:block" 
+           // Render structure on server and client initial, hide based on CSS.
+           // `hidden md:block` makes it present in DOM for peer selectors but visually hidden on mobile.
+          "hidden md:block"
         )}
         data-state={displayState}
         data-collapsible={displayDataCollapsible}
@@ -348,12 +356,19 @@ const SidebarInset = React.forwardRef<
   HTMLDivElement,
   React.ComponentProps<"main">
 >(({ className, ...props }, ref) => {
+  const [mounted, setMounted] = React.useState(false);
+  React.useEffect(() => {
+    setMounted(true);
+  }, []);
+
+  const conditionalClasses = "peer-data-[variant=inset]:min-h-[calc(100svh-theme(spacing.4))] md:peer-data-[variant=inset]:m-2 md:peer-data-[state=collapsed]:peer-data-[variant=inset]:ml-2 md:peer-data-[variant=inset]:ml-0 md:peer-data-[variant=inset]:rounded-xl md:peer-data-[variant=inset]:shadow";
+
   return (
     <main
       ref={ref}
       className={cn(
         "relative flex min-h-svh flex-1 flex-col bg-background",
-        "peer-data-[variant=inset]:min-h-[calc(100svh-theme(spacing.4))] md:peer-data-[variant=inset]:m-2 md:peer-data-[state=collapsed]:peer-data-[variant=inset]:ml-2 md:peer-data-[variant=inset]:ml-0 md:peer-data-[variant=inset]:rounded-xl md:peer-data-[variant=inset]:shadow",
+        mounted ? conditionalClasses : null,
         className
       )}
       {...props}
