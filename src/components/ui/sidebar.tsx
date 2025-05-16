@@ -193,9 +193,6 @@ const Sidebar = React.forwardRef<
 
     const handleMouseLeave = () => {
       if (!isMobile && collapsible === "icon" && actualClientState === "expanded") {
-        // Check if it was opened by click or hover - for now, assume hover out collapses if it's icon mode
-        // To prevent closing if it was explicitly opened by click, we might need another state,
-        // but for simple hover-to-expand, this is fine.
         setOpen(false);
       }
     };
@@ -215,6 +212,7 @@ const Sidebar = React.forwardRef<
       )
     }
 
+    // Client-side rendering for mobile
     if (mounted && isMobile) {
       return (
         <Sheet open={openMobile} onOpenChange={setOpenMobile} {...props}>
@@ -235,14 +233,11 @@ const Sidebar = React.forwardRef<
       )
     }
     
-    // Determine state for SSR and initial client render before mount
-    // Server: mounted=false, actualClientState is based on defaultOpen
-    // Client (initial): mounted=false, actualClientState is based on defaultOpen
-    // Client (after mount): mounted=true, actualClientState reflects current open state
-    const displayState = mounted ? actualClientState : (open ? "expanded" : "collapsed");
+    // SSR and initial client render before mount logic for data attributes
+    const displayState = mounted ? actualClientState : "expanded";
     const displayDataCollapsible = mounted
       ? (actualClientState === "collapsed" ? collapsible : "")
-      : ((open ? "expanded" : "collapsed") === "collapsed" ? collapsible : "");
+      : "";
 
 
     return (
@@ -252,7 +247,7 @@ const Sidebar = React.forwardRef<
           "group peer text-sidebar-foreground",
            // Render structure on server and client initial, hide based on CSS.
            // `hidden md:block` makes it present in DOM for peer selectors but visually hidden on mobile.
-          "hidden md:block"
+          mounted ? "md:block" : "hidden md:block"
         )}
         data-state={displayState}
         data-collapsible={displayDataCollapsible}
