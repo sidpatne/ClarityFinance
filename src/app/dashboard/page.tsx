@@ -48,7 +48,7 @@ export default function DashboardPage() {
   }, [transactions]);
 
   return (
-    <div className="container mx-auto py-6">
+    <div className="container mx-auto pt-10 pb-6">
       <PageHeader title="Dashboard" description="Your financial overview." icon={Landmark} />
       
       <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4 mb-6">
