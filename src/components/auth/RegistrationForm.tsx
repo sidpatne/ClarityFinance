@@ -44,8 +44,8 @@ export function RegistrationForm() {
     await new Promise(resolve => setTimeout(resolve, 1000));
     console.log("Registration data:", data);
     toast({
-      title: "Registration Submitted (Placeholder)",
-      description: "In a real app, this would attempt to create your account.",
+      title: "Registration Successful!",
+      description: "Your account has been created (placeholder).",
     });
     form.reset();
   };
