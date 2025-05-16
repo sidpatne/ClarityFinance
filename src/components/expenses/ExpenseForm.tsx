@@ -49,6 +49,7 @@ export function ExpenseForm({ categories, onSubmit, initialData }: ExpenseFormPr
   const { selectedCurrency } = useCurrency();
   const [isSuggesting, setIsSuggesting] = useState(false);
   const [suggestedCategory, setSuggestedCategory] = useState<{ category: string, confidence: number } | null>(null);
+  const [isClient, setIsClient] = useState(false);
   
   const form = useForm<ExpenseFormValues>({
     resolver: zodResolver(expenseFormSchema),
@@ -58,12 +59,16 @@ export function ExpenseForm({ categories, onSubmit, initialData }: ExpenseFormPr
       amount: initialData.amount
     } : {
       vendor: "",
-      amount: '' as any, // Initialize with empty string
-      date: new Date(),
+      amount: '' as any, 
+      date: undefined, // Initialize date as undefined
       categoryId: "",
       description: "",
     },
   });
+
+  useEffect(() => {
+    setIsClient(true);
+  }, []);
 
   useEffect(() => {
     if (initialData) {
@@ -73,21 +78,40 @@ export function ExpenseForm({ categories, onSubmit, initialData }: ExpenseFormPr
         amount: initialData.amount
       });
     } else {
-       form.reset({ vendor: "", amount: '' as any, date: new Date(), categoryId: "", description: "" }); // Reset with empty string
+       form.reset({ 
+         vendor: "", 
+         amount: '' as any, 
+         date: undefined, // Reset date to undefined for new entries
+         categoryId: "", 
+         description: "" 
+       });
     }
-    setSuggestedCategory(null); // Clear suggestion when form is reset or initial data changes
+    setSuggestedCategory(null); 
   }, [initialData, form]);
+
+  useEffect(() => {
+    // Set default date to new Date() only on the client, for new expenses, if no date is already set
+    if (isClient && !initialData && !form.getValues('date')) {
+      form.setValue('date', new Date(), { shouldValidate: true, shouldDirty: false });
+    }
+  }, [isClient, initialData, form]);
 
   const handleFormSubmit = (data: ExpenseFormValues) => {
     onSubmit({ ...data, date: data.date.toISOString().split('T')[0] });
-    form.reset({ vendor: "", amount: '' as any, date: new Date(), categoryId: "", description: "" }); // Reset with empty string
+    form.reset({ 
+      vendor: "", 
+      amount: '' as any, 
+      date: isClient ? new Date() : undefined, // Reset with new Date on client, undefined otherwise
+      categoryId: "", 
+      description: "" 
+    }); 
     setSuggestedCategory(null);
     toast({ title: "Success", description: `Expense ${initialData ? 'updated' : 'added'} successfully.` });
   };
 
   const handleSuggestCategory = async () => {
     const vendor = form.getValues("vendor");
-    const amountString = form.getValues("amount" as any); // RHF might hold it as string initially
+    const amountString = form.getValues("amount" as any); 
     const amount = parseFloat(amountString);
 
 
@@ -166,7 +190,14 @@ export function ExpenseForm({ categories, onSubmit, initialData }: ExpenseFormPr
                   <FormItem>
                     <FormLabel>Amount ({selectedCurrency})</FormLabel>
                     <FormControl>
-                      <Input type="number" step="0.01" placeholder="e.g., 25.50" {...field} onChange={e => field.onChange(e.target.value === '' ? '' : parseFloat(e.target.value))} />
+                      <Input 
+                        type="number" 
+                        step="0.01" 
+                        placeholder="e.g., 25.50" 
+                        {...field} 
+                        value={field.value === '' ? '' : Number(field.value)} // Ensure value is number or empty string
+                        onChange={e => field.onChange(e.target.value === '' ? '' : parseFloat(e.target.value))} 
+                      />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -280,3 +311,4 @@ export function ExpenseForm({ categories, onSubmit, initialData }: ExpenseFormPr
     </Card>
   );
 }
+
