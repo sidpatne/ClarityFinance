@@ -1,3 +1,4 @@
+
 "use client";
 
 import Link from "next/link";
@@ -76,7 +77,7 @@ export function AppSidebar() {
          <SidebarMenu>
            <SidebarMenuItem>
             <SidebarMenuButton asChild tooltip="Settings">
-                <Link href="#"> {/* Placeholder for settings page */}
+                <Link href="/settings">
                 <Settings className="h-5 w-5" />
                 <span>Settings</span>
                 </Link>

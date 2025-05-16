@@ -1,6 +1,7 @@
+
 import { Button } from "@/components/ui/button";
 import { SidebarTrigger } from "@/components/ui/sidebar";
-import { CircleUser, Settings } from "lucide-react";
+import { CircleUser } from "lucide-react";
 import Link from "next/link";
 
 export function AppHeader() {
@@ -26,10 +27,14 @@ export function AppHeader() {
           <span className="text-xl font-bold">ClarityFinance</span>
         </Link>
         <div className="ml-auto flex items-center gap-2">
-          <Button variant="ghost" size="icon" className="rounded-full">
-            <CircleUser className="h-5 w-5" />
-            <span className="sr-only">Toggle user menu</span>
-          </Button>
+          <Link href="/login" passHref>
+            <Button variant="ghost" size="icon" className="rounded-full" asChild>
+              <div> {/* Added div wrapper for Link to work correctly with asChild Button */}
+                <CircleUser className="h-5 w-5" />
+                <span className="sr-only">Login</span>
+              </div>
+            </Button>
+          </Link>
         </div>
       </div>
     </header>
