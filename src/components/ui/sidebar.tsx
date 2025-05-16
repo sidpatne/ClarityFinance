@@ -178,7 +178,7 @@ const Sidebar = React.forwardRef<
     },
     ref
   ) => {
-    const { isMobile, state: actualClientState, open, setOpen, openMobile, setOpenMobile } = useSidebar()
+    const { state: actualClientState, setOpen, openMobile, setOpenMobile, isMobile } = useSidebar()
     const [mounted, setMounted] = React.useState(false)
 
     React.useEffect(() => {
@@ -193,10 +193,12 @@ const Sidebar = React.forwardRef<
 
     const handleMouseLeave = () => {
       if (!isMobile && collapsible === "icon" && actualClientState === "expanded") {
-        setOpen(false);
+        // Only collapse if it was expanded by hover, not by explicit toggle
+        // This might require more sophisticated state if explicit toggle needs to persist over hover
+        setOpen(false); 
       }
     };
-
+    
     if (collapsible === "none") {
       return (
         <div
@@ -233,11 +235,10 @@ const Sidebar = React.forwardRef<
       )
     }
     
-    // SSR and initial client render before mount logic for data attributes
-    const displayState = mounted ? actualClientState : "expanded";
-    const displayDataCollapsible = mounted
-      ? (actualClientState === "collapsed" ? collapsible : "")
-      : "";
+    // For SSR and initial client render, use a state that won't cause hydration mismatch.
+    // Then, useEffect will trigger a re-render with the actual client state.
+    const displayState = !mounted ? "expanded" : actualClientState; 
+    const displayDataCollapsible = !mounted ? "" : (actualClientState === "collapsed" ? collapsible : "");
 
 
     return (
@@ -247,7 +248,7 @@ const Sidebar = React.forwardRef<
           "group peer text-sidebar-foreground",
            // Render structure on server and client initial, hide based on CSS.
            // `hidden md:block` makes it present in DOM for peer selectors but visually hidden on mobile.
-          mounted ? "md:block" : "hidden md:block"
+          mounted ? "md:block" : "hidden md:block" // Keep DOM structure for peer, rely on CSS for visibility
         )}
         data-state={displayState}
         data-collapsible={displayDataCollapsible}
@@ -348,14 +349,10 @@ const SidebarRail = React.forwardRef<
 SidebarRail.displayName = "SidebarRail"
 
 const SidebarInset = React.forwardRef<
-  HTMLDivElement,
+  HTMLMainElement,
   React.ComponentProps<"main">
 >(({ className, ...props }, ref) => {
-  const [mounted, setMounted] = React.useState(false);
-  React.useEffect(() => {
-    setMounted(true);
-  }, []);
-
+  // Classes that depend on the peer state
   const conditionalClasses = "peer-data-[variant=inset]:min-h-[calc(100svh-theme(spacing.4))] md:peer-data-[variant=inset]:m-2 md:peer-data-[state=collapsed]:peer-data-[variant=inset]:ml-2 md:peer-data-[variant=inset]:ml-0 md:peer-data-[variant=inset]:rounded-xl md:peer-data-[variant=inset]:shadow";
 
   return (
@@ -363,7 +360,7 @@ const SidebarInset = React.forwardRef<
       ref={ref}
       className={cn(
         "relative flex min-h-svh flex-1 flex-col bg-background",
-        mounted ? conditionalClasses : null,
+        conditionalClasses, // Always include conditionalClasses
         className
       )}
       {...props}
