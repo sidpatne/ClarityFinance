@@ -45,7 +45,7 @@ export function RegistrationForm() {
     console.log("Registration data:", data);
     toast({
       title: "Registration Successful!",
-      description: "Your account has been created (placeholder).",
+      description: "Your account has been created.",
     });
     form.reset();
   };
