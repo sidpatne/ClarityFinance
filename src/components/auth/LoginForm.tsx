@@ -39,8 +39,8 @@ export function LoginForm() {
     await new Promise(resolve => setTimeout(resolve, 1000));
     console.log("Login data:", data);
     toast({
-      title: "Login Submitted (Placeholder)",
-      description: "In a real app, this would attempt to log you in.",
+      title: "Login Successful (Simulated)",
+      description: "Welcome back! You're now logged in. (This is a simulation)",
     });
     form.reset();
   };
@@ -82,3 +82,4 @@ export function LoginForm() {
     </Form>
   );
 }
+
