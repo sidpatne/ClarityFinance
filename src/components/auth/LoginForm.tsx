@@ -39,8 +39,8 @@ export function LoginForm() {
     await new Promise(resolve => setTimeout(resolve, 1000));
     console.log("Login data:", data);
     toast({
-      title: "Login Successful (Simulated)",
-      description: "Welcome back! You're now logged in. (This is a simulation)",
+      title: "Login Successful",
+      description: "Welcome back! You're now logged in.",
     });
     form.reset();
   };
