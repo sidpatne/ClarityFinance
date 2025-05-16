@@ -26,6 +26,8 @@ const SIDEBAR_WIDTH = "16rem"
 const SIDEBAR_WIDTH_MOBILE = "18rem"
 const SIDEBAR_WIDTH_ICON = "3rem"
 const SIDEBAR_KEYBOARD_SHORTCUT = "b"
+const APP_HEADER_HEIGHT_CLASS = "top-16"; // Corresponds to h-16 (4rem)
+const APP_HEADER_CALC_HEIGHT_CLASS = "!h-[calc(100svh_-_4rem)]"; // For overriding default height
 
 type SidebarContext = {
   state: "expanded" | "collapsed"
@@ -193,8 +195,6 @@ const Sidebar = React.forwardRef<
 
     const handleMouseLeave = () => {
       if (!isMobile && collapsible === "icon" && actualClientState === "expanded") {
-        // Only collapse if it was expanded by hover, not by explicit toggle
-        // This might require more sophisticated state if explicit toggle needs to persist over hover
         setOpen(false); 
       }
     };
@@ -203,7 +203,10 @@ const Sidebar = React.forwardRef<
       return (
         <div
           className={cn(
-            "flex h-full w-[--sidebar-width] flex-col bg-sidebar text-sidebar-foreground",
+            "flex flex-col bg-sidebar text-sidebar-foreground",
+            APP_HEADER_HEIGHT_CLASS, // Starts below header
+            APP_HEADER_CALC_HEIGHT_CLASS, // Fills remaining height
+            "w-[--sidebar-width]",
             className
           )}
           ref={ref}
@@ -221,7 +224,11 @@ const Sidebar = React.forwardRef<
           <SheetContent
             data-sidebar="sidebar"
             data-mobile="true"
-            className="w-[--sidebar-width] bg-sidebar p-0 text-sidebar-foreground [&>button]:hidden"
+            className={cn(
+              "w-[--sidebar-width] bg-sidebar p-0 text-sidebar-foreground [&>button]:hidden",
+              APP_HEADER_HEIGHT_CLASS, 
+              APP_HEADER_CALC_HEIGHT_CLASS
+            )}
             style={
               {
                 "--sidebar-width": SIDEBAR_WIDTH_MOBILE,
@@ -235,10 +242,8 @@ const Sidebar = React.forwardRef<
       )
     }
     
-    // For SSR and initial client render, use a state that won't cause hydration mismatch.
-    // Then, useEffect will trigger a re-render with the actual client state.
     const displayState = !mounted ? "expanded" : actualClientState; 
-    const displayDataCollapsible = !mounted ? "" : (actualClientState === "collapsed" ? collapsible : "");
+    const displayDataCollapsible = !mounted ? "" : (actualClientState === "collapsed" && collapsible !== "offcanvas" ? collapsible : "");
 
 
     return (
@@ -246,9 +251,7 @@ const Sidebar = React.forwardRef<
         ref={ref}
         className={cn(
           "group peer text-sidebar-foreground",
-           // Render structure on server and client initial, hide based on CSS.
-           // `hidden md:block` makes it present in DOM for peer selectors but visually hidden on mobile.
-          mounted ? "md:block" : "hidden md:block" // Keep DOM structure for peer, rely on CSS for visibility
+          mounted ? "md:block" : "hidden md:block" 
         )}
         data-state={displayState}
         data-collapsible={displayDataCollapsible}
@@ -259,7 +262,9 @@ const Sidebar = React.forwardRef<
       >
         <div
           className={cn(
-            "duration-200 relative h-svh w-[--sidebar-width] bg-transparent transition-[width] ease-linear",
+            "duration-200 relative bg-transparent transition-[width] ease-linear",
+            APP_HEADER_CALC_HEIGHT_CLASS, // Adjusted height
+            "w-[--sidebar-width]", // Default width
             "group-data-[collapsible=offcanvas]:w-0",
             "group-data-[side=right]:rotate-180",
             variant === "floating" || variant === "inset"
@@ -269,7 +274,10 @@ const Sidebar = React.forwardRef<
         />
         <div
           className={cn(
-            "duration-200 fixed inset-y-0 z-10 hidden h-svh w-[--sidebar-width] transition-[left,right,width] ease-linear md:flex",
+            "duration-200 fixed bottom-0 z-10 hidden transition-[left,right,width] ease-linear md:flex",
+            APP_HEADER_HEIGHT_CLASS, // Positioned below header
+            APP_HEADER_CALC_HEIGHT_CLASS, // Takes remaining height
+            "w-[--sidebar-width]",
             side === "left"
               ? "left-0 group-data-[collapsible=offcanvas]:left-[calc(var(--sidebar-width)*-1)]"
               : "right-0 group-data-[collapsible=offcanvas]:right-[calc(var(--sidebar-width)*-1)]",
@@ -349,18 +357,19 @@ const SidebarRail = React.forwardRef<
 SidebarRail.displayName = "SidebarRail"
 
 const SidebarInset = React.forwardRef<
-  HTMLMainElement,
-  React.ComponentProps<"main">
+  HTMLDivElement, // Changed from HTMLMainElement as it's a div wrapper for main
+  React.HTMLAttributes<HTMLDivElement> // Changed from React.ComponentProps<"main">
 >(({ className, ...props }, ref) => {
   // Classes that depend on the peer state
-  const conditionalClasses = "peer-data-[variant=inset]:min-h-[calc(100svh-theme(spacing.4))] md:peer-data-[variant=inset]:m-2 md:peer-data-[state=collapsed]:peer-data-[variant=inset]:ml-2 md:peer-data-[variant=inset]:ml-0 md:peer-data-[variant=inset]:rounded-xl md:peer-data-[variant=inset]:shadow";
-
+  const conditionalClasses = "peer-data-[variant=inset]:min-h-[calc(100svh-theme(spacing.4)-theme(spacing.16))] md:peer-data-[variant=inset]:m-2 md:peer-data-[state=collapsed]:peer-data-[variant=inset]:ml-2 md:peer-data-[variant=inset]:ml-0 md:peer-data-[variant=inset]:rounded-xl md:peer-data-[variant=inset]:shadow";
+  // Note: min-h adjusted for pt-16 on parent (appHeaderHeight)
+  
   return (
-    <main
+    <div // Changed from main to div, as main is now a child
       ref={ref}
       className={cn(
-        "relative flex min-h-svh flex-1 flex-col bg-background",
-        conditionalClasses, // Always include conditionalClasses
+        "relative flex flex-1 flex-col bg-background", // base classes
+        conditionalClasses, 
         className
       )}
       {...props}
@@ -798,4 +807,3 @@ export {
   SidebarTrigger,
   useSidebar,
 }
-
