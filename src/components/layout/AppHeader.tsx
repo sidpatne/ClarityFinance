@@ -6,7 +6,7 @@ import Link from "next/link";
 export function AppHeader() {
   return (
     <header className="sticky top-0 z-10 flex h-16 items-center gap-4 border-b bg-background px-4 md:px-6 shadow-sm">
-      <SidebarTrigger className="md:hidden" />
+      <SidebarTrigger />
       <div className="flex w-full items-center gap-4 md:ml-auto md:gap-2 lg:gap-4">
         <Link href="/dashboard" className="flex items-center gap-2 text-lg font-semibold md:text-base">
           <svg
